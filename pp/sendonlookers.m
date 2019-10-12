@@ -1,0 +1,46 @@
+function bees = sendonlookers(bees)
+global colonysize limit;
+    fprintf('\n|---------------------------|');
+    fprintf('\n|---   sending-onlookers ---|');
+    fprintf('\n|---------------------------|\n');
+    cost = [];
+    for i = 1:colonysize
+        cost(i) = bees(i).theif.profit;
+    end
+    %probability = cost/abs(sum(cost));%probability of *not* getting selected 
+    probability = (cost - min(cost))/(max(cost) - min(cost)); %scaling onto [0,1]
+
+    for i=1:round(colonysize/2)     %onlooker bees are half of colonysize in number
+        index = roulettewheel(probability);
+        fprintf('\n\n Onlooker->[%d] Selected Bee Name: [%d]',i, index);
+        fprintf('\n Bee->[%d] "%dth" time in local optimum',index, bees(index).abandon);
+        selected = bees(index).theif;
+        vns = bees(index).vns;
+        tabulist = bees(index).tabulist;
+        tabulist2 = bees(index).tabulist2;
+        [updted, tabulist] = local_search(selected,'theif',index,vns, tabulist);
+         if updted.profit==selected.profit
+             bees(index).abandon = bees(index).abandon+1;
+             %vns(i) = vns(i) + 1;
+         end
+         if bees(index).abandon > (limit/2)
+             [updted, tabulist2] = local_search_rand(updted, index, tabulist2);
+         end
+         bees(index).theif = updted;
+         bees(index).tabulist = tabulist;
+         bees(index).tabulist2 = tabulist2;
+    end
+
+    %{
+    obj.onlookers = [];
+    obj.scout = [];
+    for i=1:obj.colonysize
+        r = rand();    
+        if r<probability(i)   %.... '<' for KP or '>' for TSP
+            %probability based determination of onlookers
+            obj.onlookers = [obj.onlookers obj.employed(i)];
+        else obj.scout=[obj.scout obj.employed(i)]; %failed bees turned into scouts
+        end
+    end
+    %}
+end
